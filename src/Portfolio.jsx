@@ -14,7 +14,7 @@ const DEFAULT_DATA = {
     location: "Pune, India",
     linkedin: "https://linkedin.com/in/swapnil-pharate",
     github: "https://github.com/swapnilpharate",
-    resume: "#",
+    resume: "/Swapnil_Pharate_resume.pdf",
     availability: "Open to Opportunities"
   },
   about: {
@@ -1049,27 +1049,81 @@ const injectStyles = () => {
     @media (max-width: 1100px) {
       .skills-grid { grid-template-columns: repeat(2, 1fr); }
       .projects-grid { grid-template-columns: repeat(2, 1fr); }
-      .hero-content { grid-template-columns: 1fr 360px; }
+      .hero-content { grid-template-columns: 1fr 340px; }
     }
     @media (max-width: 900px) {
       .hero-content { grid-template-columns: 1fr; }
-      .hero-tech-panel { height: 320px; }
+      .hero-tech-panel { height: 300px; }
     }
     @media (max-width: 768px) {
       .nav-links { display: none; }
       .hamburger { display: flex; }
-      .hero-name { font-size: clamp(2.8rem, 10vw, 4.5rem); }
-      .about-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .skills-grid, .projects-grid, .certs-grid, .edu-grid { grid-template-columns: 1fr; }
+      /* Hero — tighter on tablet */
+      .hero { padding: 5rem 0 3rem; }
+      .hero-name { font-size: clamp(2.4rem, 9vw, 3.8rem); }
+      .hero-tagline { font-size: 0.92rem; margin-bottom: 1.5rem; }
+      .hero-badge { font-size: 0.62rem; margin-bottom: 1rem; }
+      .role-pill { font-size: 0.72rem; padding: 0.3rem 0.75rem; }
+      .hero-roles { gap: 0.6rem; margin-bottom: 1rem; }
+      /* Buttons smaller */
+      .btn { padding: 0.55rem 1.1rem; font-size: 0.78rem; }
+      /* Sections */
+      .section { padding: 2.5rem 0; }
+      .section-header { margin-bottom: 1.4rem; }
+      .section-title { font-size: 1.8rem; }
+      /* Grids to single column */
+      .about-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+      .stat-card { padding: 1rem; }
+      .stat-val { font-size: 1.6rem; }
+      .skills-grid { grid-template-columns: 1fr; }
+      .skill-card { padding: 1.1rem; }
+      .projects-grid { grid-template-columns: 1fr; }
+      .certs-grid, .edu-grid { grid-template-columns: 1fr; }
       .edit-row { grid-template-columns: 1fr; }
-      .section { padding: 3rem 0; }
+      /* Experience */
+      .timeline-item { padding-left: 1.2rem; }
+      /* Cards */
+      .project-card, .cert-card, .edu-card { padding: 1.1rem; }
     }
     @media (max-width: 520px) {
-      .container { padding: 0 1rem; }
-      .hero-ctas { flex-direction: column; }
-      .hero-ctas .btn { text-align: center; justify-content: center; }
+      .container { padding: 0 0.85rem; }
+      /* Hero — compact on phone */
+      .hero { padding: 4.5rem 0 2.5rem; }
+      .hero-name { font-size: clamp(2rem, 11vw, 3rem); letter-spacing: -0.02em; }
+      .hero-tagline { font-size: 0.85rem; line-height: 1.6; margin-bottom: 1.2rem; }
+      .hero-badge { font-size: 0.6rem; padding: 0.28rem 0.7rem; margin-bottom: 0.8rem; }
+      .hero-roles { gap: 0.45rem; margin-bottom: 0.9rem; }
+      .role-pill { font-size: 0.67rem; padding: 0.28rem 0.65rem; }
+      .hero-ctas { flex-direction: column; gap: 0.6rem; }
+      .hero-ctas .btn { text-align: center; justify-content: center; padding: 0.6rem 1rem; font-size: 0.78rem; }
       .hero-tech-panel { display: none; }
+      /* Nav */
+      .nav { padding: 0 0.85rem; }
+      .nav-brand { font-size: 1rem; }
+      /* Sections tighter */
+      .section { padding: 2rem 0; }
+      .section-title { font-size: 1.5rem; }
+      .section-header { margin-bottom: 1.1rem; }
+      /* Stat cards 2-col */
+      .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+      .stat-card { padding: 0.85rem; }
+      .stat-val { font-size: 1.4rem; }
+      .stat-label { font-size: 0.65rem; }
+      /* Skill items smaller */
+      .skill-tag { font-size: 0.7rem; padding: 0.25rem 0.6rem; }
+      /* Project cards */
+      .project-card { padding: 1rem; }
+      .project-title { font-size: 1rem; }
+      .project-desc { font-size: 0.82rem; }
+      /* Cert / edu */
+      .cert-card, .edu-card { padding: 0.9rem; }
+      /* Experience */
+      .exp-role { font-size: 1rem; }
+      .exp-company { font-size: 0.85rem; }
+      .timeline-body { font-size: 0.82rem; }
+      /* Contact */
+      .contact-card { padding: 1rem; }
     }
   `;
   document.head.appendChild(s);
@@ -2451,7 +2505,7 @@ export default function Portfolio() {
             <p className="hero-tagline">{meta.tagline}</p>
 
             <div className="hero-ctas">
-              <a href={meta.resume} className="btn btn-primary" download>
+              <a href="/Swapnil_Pharate_resume.pdf" download="Swapnil_Pharate_Resume.pdf" className="btn btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Resume
               </a>
