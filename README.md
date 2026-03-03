@@ -119,7 +119,6 @@ You can also edit content **live in the browser** using the built-in editor:
 - Click **"⊞ Open Editor"**
 - Edit any section, click **Save Changes**
 - Changes persist in `localStorage` (survive page refresh)
-- Download AWS icons https://www.awsicon.com/
 
 To make edits permanent, copy the values back into `Portfolio.jsx`.
 

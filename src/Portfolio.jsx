@@ -1689,169 +1689,174 @@ function EditPanel({ data, onSave, onClose }) {
 
   const renderIcons = () => {
     const nodes = draft.orbitIcons || SERVICE_NODES.map(n => ({...n, dataUrl: null}));
+    const dragIdx = { current: null };
+
+    const readFile = (file, cb) => {
+      const reader = new FileReader();
+      reader.onload = ev => cb(ev.target.result);
+      reader.readAsDataURL(file);
+    };
 
     const handleUpload = (i, file) => {
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
+      readFile(file, dataUrl => {
         const arr = [...nodes];
-        arr[i] = { ...arr[i], file: file.name, dataUrl: ev.target.result };
-        setDraft({ ...draft, orbitIcons: arr });
-      };
-      reader.readAsDataURL(file);
+        arr[i] = { ...arr[i], file: file.name, dataUrl };
+        setDraft(d => ({ ...d, orbitIcons: arr }));
+      });
     };
 
     const handleAddNew = (file) => {
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const name = file.name.replace(/\.[^.]+$/, '');
-        const label = name.slice(0,10);
-        const arr = [...nodes, { file: file.name, label, color: "#6366f1", dataUrl: ev.target.result }];
-        setDraft({ ...draft, orbitIcons: arr });
-      };
-      reader.readAsDataURL(file);
+      readFile(file, dataUrl => {
+        const label = file.name.replace(/\.[^.]+$/, '').slice(0, 10);
+        const arr = [...nodes, { file: file.name, label, color: "#6366f1", dataUrl }];
+        setDraft(d => ({ ...d, orbitIcons: arr }));
+      });
     };
+
+    const moveIcon = (from, to) => {
+      const arr = [...nodes];
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      setDraft(d => ({ ...d, orbitIcons: arr }));
+    };
+
+    const r1End = Math.ceil(nodes.length * 0.25);
+    const r2End = r1End + Math.ceil(nodes.length * 0.35);
+    const ringOf = i => i < r1End ? 1 : i < r2End ? 2 : 3;
+    const ringColor = i => i < r1End ? "#6366f1" : i < r2End ? "#06b6d4" : "#ec4899";
+    const ringBg   = i => i < r1End ? "rgba(99,102,241,0.25)" : i < r2End ? "rgba(6,182,212,0.25)" : "rgba(236,72,153,0.25)";
 
     return (
       <div>
-        {/* Header bar */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.2rem",
-          padding:"0.8rem 1rem",background:"rgba(99,102,241,0.07)",border:"1px solid rgba(99,102,241,0.2)",
-          borderRadius:10}}>
-          <span style={{fontFamily:"var(--mono)",fontSize:"0.68rem",color:"var(--muted2)"}}>
-            {nodes.length} icons · auto-distributed across 3 rings
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+          marginBottom:"1rem",padding:"0.7rem 1rem",
+          background:"rgba(99,102,241,0.07)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:10}}>
+          <span style={{fontFamily:"var(--mono)",fontSize:"0.64rem",color:"var(--muted2)"}}>
+            {nodes.length} icons · <span style={{color:"rgba(148,163,184,0.6)"}}>drag to reorder · ring = position in orbit</span>
           </span>
-          {/* Big "Add new icon" upload button */}
-          <label style={{
-            display:"flex",alignItems:"center",gap:"0.5rem",
-            padding:"0.45rem 1rem",
-            background:"linear-gradient(135deg,rgba(99,102,241,0.25),rgba(6,182,212,0.2))",
-            border:"1px solid rgba(99,102,241,0.5)",
-            borderRadius:8,cursor:"pointer",
-            fontFamily:"var(--mono)",fontSize:"0.7rem",color:"#a5b4fc",
-            transition:"all 0.2s",
-          }}
-            onMouseEnter={e=>e.currentTarget.style.background="linear-gradient(135deg,rgba(99,102,241,0.4),rgba(6,182,212,0.3))"}
-            onMouseLeave={e=>e.currentTarget.style.background="linear-gradient(135deg,rgba(99,102,241,0.25),rgba(6,182,212,0.2))"}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          <label style={{display:"flex",alignItems:"center",gap:"0.4rem",padding:"0.38rem 0.85rem",
+            cursor:"pointer",borderRadius:8,fontFamily:"var(--mono)",fontSize:"0.67rem",color:"#a5b4fc",
+            background:"linear-gradient(135deg,rgba(99,102,241,0.22),rgba(6,182,212,0.18))",
+            border:"1px solid rgba(99,102,241,0.45)"}}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             Upload PNG
-            <input type="file" accept="image/png,image/*" style={{display:"none"}}
-              onChange={e => handleAddNew(e.target.files[0])} />
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleAddNew(e.target.files[0])} />
           </label>
         </div>
 
-        {/* Icon grid */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"0.8rem"}}>
+        {/* Grid */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"0.6rem"}}>
           {nodes.map((n, i) => {
             const imgSrc = n.dataUrl || ("/icons/" + n.file);
+            const ring = ringOf(i);
             return (
-              <div key={i} className="list-item-editor" style={{padding:"0.9rem",margin:0}}>
+              <div key={n.file+i}
+                draggable
+                onDragStart={e => { dragIdx.current = i; e.dataTransfer.effectAllowed = "move"; e.currentTarget.style.opacity="0.5"; }}
+                onDragEnd={e => { e.currentTarget.style.opacity="1"; dragIdx.current = null; }}
+                onDragOver={e => { e.preventDefault(); e.currentTarget.style.boxShadow=`0 0 0 2px ${ringColor(i)}`; }}
+                onDragLeave={e => { e.currentTarget.style.boxShadow=""; }}
+                onDrop={e => {
+                  e.preventDefault(); e.currentTarget.style.boxShadow="";
+                  if (dragIdx.current !== null && dragIdx.current !== i) moveIcon(dragIdx.current, i);
+                }}
+                style={{
+                  background:"var(--card)",border:"1px solid var(--border2)",borderRadius:12,
+                  padding:"0.75rem",position:"relative",cursor:"grab",userSelect:"none",
+                  transition:"box-shadow 0.15s",
+                }}
+              >
                 {/* Delete */}
-                <button className="btn btn-sm btn-danger del-btn" style={{top:"0.6rem",right:"0.6rem"}} onClick={() => {
-                  const arr=[...nodes]; arr.splice(i,1);
-                  setDraft({...draft, orbitIcons: arr});
-                }}>×</button>
+                <button onClick={()=>{const arr=[...nodes];arr.splice(i,1);setDraft(d=>({...d,orbitIcons:arr}));}}
+                  style={{position:"absolute",top:6,right:6,width:20,height:20,borderRadius:"50%",
+                    background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",
+                    color:"#ef4444",fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>×</button>
 
-                {/* Top row: preview + upload replace */}
-                <div style={{display:"flex",alignItems:"center",gap:"0.75rem",marginBottom:"0.75rem",marginRight:"2rem"}}>
-                  {/* Icon preview box */}
-                  <div style={{
-                    width:48,height:48,borderRadius:12,flexShrink:0,
+                {/* Top row */}
+                <div style={{display:"flex",alignItems:"center",gap:"0.55rem",marginBottom:"0.6rem",paddingRight:"1.4rem"}}>
+                  {/* Drag dots */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2.5,flexShrink:0,opacity:0.3}}>
+                    {[0,1,2,3,4,5].map(d=><div key={d} style={{width:3,height:3,borderRadius:"50%",background:"#94a3b8"}}/>)}
+                  </div>
+                  {/* Ring badge */}
+                  <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,
+                    background:ringBg(i),border:`1.5px solid ${ringColor(i)}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontFamily:"var(--mono)",fontSize:"0.48rem",fontWeight:700,color:ringColor(i)}}>
+                    R{ring}
+                  </div>
+                  {/* Icon preview */}
+                  <div style={{width:40,height:40,borderRadius:10,flexShrink:0,
                     background:`${n.color}18`,border:`1px solid ${n.color}50`,
                     display:"flex",alignItems:"center",justifyContent:"center",
-                    boxShadow:`0 4px 14px ${n.color}30,inset 0 1px 0 rgba(255,255,255,0.1)`,
-                    position:"relative",overflow:"hidden",
-                  }}>
+                    boxShadow:`0 3px 10px ${n.color}25,inset 0 1px 0 rgba(255,255,255,0.1)`}}>
                     <img src={imgSrc} alt={n.label}
-                      style={{width:30,height:30,objectFit:"contain",
-                        filter:`drop-shadow(0 2px 5px ${n.color}70)`}}
+                      style={{width:24,height:24,objectFit:"contain",filter:`drop-shadow(0 1px 3px ${n.color}60)`}}
                       onError={e=>{e.target.style.opacity=0.15;}}/>
                   </div>
-                  {/* Replace image upload */}
-                  <label style={{
-                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                    width:38,height:48,borderRadius:10,flexShrink:0,
-                    border:"1px dashed rgba(99,102,241,0.4)",
-                    background:"rgba(99,102,241,0.06)",
-                    cursor:"pointer",transition:"all 0.2s",gap:3,
-                  }}
-                    title="Replace icon PNG"
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(99,102,241,0.8)";e.currentTarget.style.background="rgba(99,102,241,0.15)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(99,102,241,0.4)";e.currentTarget.style.background="rgba(99,102,241,0.06)";}}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(165,180,252,0.8)" strokeWidth="2.5">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  {/* Swap upload */}
+                  <label style={{width:30,height:40,borderRadius:8,flexShrink:0,cursor:"pointer",
+                    border:"1px dashed rgba(99,102,241,0.32)",background:"rgba(99,102,241,0.04)",
+                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1.5}}
+                    title="Replace icon">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(165,180,252,0.65)" strokeWidth="2.5">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    <span style={{fontFamily:"var(--mono)",fontSize:"0.48rem",color:"rgba(165,180,252,0.7)",letterSpacing:"0.04em"}}>swap</span>
-                    <input type="file" accept="image/png,image/*" style={{display:"none"}}
-                      onChange={e => handleUpload(i, e.target.files[0])} />
+                    <span style={{fontFamily:"var(--mono)",fontSize:"0.4rem",color:"rgba(165,180,252,0.55)"}}>swap</span>
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleUpload(i,e.target.files[0])} />
                   </label>
-                  {/* Name + file */}
+                  {/* File name */}
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:"var(--mono)",fontSize:"0.6rem",color:"var(--muted)",
-                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:3}}>{n.file}</div>
-                    {n.dataUrl && <div style={{fontFamily:"var(--mono)",fontSize:"0.55rem",color:"#10b981"}}>● uploaded</div>}
+                    <div style={{fontFamily:"var(--mono)",fontSize:"0.54rem",color:"var(--muted)",
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.file}</div>
+                    {n.dataUrl && <div style={{fontFamily:"var(--mono)",fontSize:"0.5rem",color:"#10b981",marginTop:1}}>● saved</div>}
                   </div>
                 </div>
 
-                {/* Label + Color row */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 48px",gap:"0.5rem",alignItems:"end"}}>
-                  <div className="edit-field" style={{margin:0}}>
-                    <label className="edit-label">Label</label>
-                    <input className="edit-input" value={n.label} maxLength={10}
-                      style={{padding:"0.45rem 0.7rem",fontSize:"0.8rem"}}
-                      onChange={e => {
-                        const arr=[...nodes]; arr[i]={...arr[i],label:e.target.value};
-                        setDraft({...draft,orbitIcons:arr});
-                      }} />
+                {/* Label + color */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 40px",gap:"0.4rem",alignItems:"end"}}>
+                  <div>
+                    <div style={{fontFamily:"var(--mono)",fontSize:"0.58rem",color:"var(--muted)",marginBottom:"0.25rem",letterSpacing:"0.08em",textTransform:"uppercase"}}>Label</div>
+                    <input value={n.label} maxLength={10}
+                      style={{width:"100%",background:"var(--surface)",border:"1px solid var(--border2)",borderRadius:6,
+                        padding:"0.35rem 0.55rem",fontFamily:"var(--mono)",fontSize:"0.75rem",color:"var(--text)",outline:"none"}}
+                      onChange={e=>{const arr=[...nodes];arr[i]={...arr[i],label:e.target.value};setDraft(d=>({...d,orbitIcons:arr}));}}/>
                   </div>
                   <div>
-                    <label className="edit-label" style={{display:"block",marginBottom:"0.35rem"}}>Glow</label>
-                    <input type="color" value={n.color} style={{
-                      width:"100%",height:36,borderRadius:8,border:"1px solid var(--border2)",
-                      cursor:"pointer",background:"none",padding:2,
-                    }}
-                      onChange={e => {
-                        const arr=[...nodes]; arr[i]={...arr[i],color:e.target.value};
-                        setDraft({...draft,orbitIcons:arr});
-                      }} />
+                    <div style={{fontFamily:"var(--mono)",fontSize:"0.58rem",color:"var(--muted)",marginBottom:"0.25rem",letterSpacing:"0.08em",textTransform:"uppercase"}}>Glow</div>
+                    <input type="color" value={n.color}
+                      style={{width:"100%",height:33,borderRadius:6,border:"1px solid var(--border2)",cursor:"pointer",padding:2,background:"none"}}
+                      onChange={e=>{const arr=[...nodes];arr[i]={...arr[i],color:e.target.value};setDraft(d=>({...d,orbitIcons:arr}));}}/>
                   </div>
                 </div>
               </div>
             );
           })}
 
-          {/* Add blank slot */}
-          <label style={{
-            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.5rem",
-            border:"1.5px dashed rgba(99,102,241,0.25)",borderRadius:12,
-            background:"rgba(99,102,241,0.04)",cursor:"pointer",
-            minHeight:120,transition:"all 0.2s",
-          }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(99,102,241,0.6)";e.currentTarget.style.background="rgba(99,102,241,0.1)";}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(99,102,241,0.25)";e.currentTarget.style.background="rgba(99,102,241,0.04)";}}
+          {/* Add-new upload card */}
+          <label style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"0.4rem",
+            border:"1.5px dashed rgba(99,102,241,0.2)",borderRadius:12,background:"rgba(99,102,241,0.03)",
+            cursor:"pointer",minHeight:120,transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(99,102,241,0.5)";e.currentTarget.style.background="rgba(99,102,241,0.08)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(99,102,241,0.2)";e.currentTarget.style.background="rgba(99,102,241,0.03)";}}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(99,102,241,0.6)" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(99,102,241,0.5)" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            <span style={{fontFamily:"var(--mono)",fontSize:"0.65rem",color:"rgba(99,102,241,0.6)",letterSpacing:"0.06em"}}>Upload new icon</span>
-            <span style={{fontFamily:"var(--mono)",fontSize:"0.56rem",color:"var(--muted)",letterSpacing:"0.04em"}}>PNG / any image</span>
-            <input type="file" accept="image/png,image/*" style={{display:"none"}}
-              onChange={e => handleAddNew(e.target.files[0])} />
+            <span style={{fontFamily:"var(--mono)",fontSize:"0.6rem",color:"rgba(99,102,241,0.5)"}}>Upload new icon</span>
+            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handleAddNew(e.target.files[0])} />
           </label>
         </div>
       </div>
     );
   };
 
-  const panels = { meta:renderMeta, about:renderAbout, skills:renderSkills, experience:renderExperience, projects:renderProjects, certifications:renderCerts, education:renderEducation, icons:renderIcons };
+    const panels = { meta:renderMeta, about:renderAbout, skills:renderSkills, experience:renderExperience, projects:renderProjects, certifications:renderCerts, education:renderEducation, icons:renderIcons };
 
   return (
     <div className="edit-overlay" onClick={e => { if(e.target === e.currentTarget) onClose(); }}>
@@ -1870,11 +1875,26 @@ function EditPanel({ data, onSave, onClose }) {
         <div className="edit-body" style={{maxHeight:"60vh",overflowY:"auto"}}>
           {panels[tab]?.()}
         </div>
-        <div className="edit-actions">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button className="btn btn-success btn-sm" onClick={() => { onSave(draft); onClose(); }}>
-            ✓ Save Changes
-          </button>
+        <div style={{borderTop:"1px solid var(--border2)",padding:"0.8rem 1.4rem",background:"rgba(6,182,212,0.04)"}}>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"0.61rem",color:"rgba(148,163,184,0.55)",marginBottom:"0.65rem",lineHeight:1.7}}>
+            <span style={{color:"#67e8f9",fontWeight:700}}>How to push changes to production:</span><br/>
+            <span style={{color:"#a5b4fc"}}>1.</span> Make edits  <span style={{color:"#a5b4fc"}}>2.</span> Save Changes  <span style={{color:"#a5b4fc"}}>3.</span> Click <span style={{color:"#10b981",fontWeight:600}}>Export for Prod</span><br/>
+            <span style={{color:"#a5b4fc"}}>4.</span> Save the downloaded file as <code style={{color:"#fbbf24",background:"rgba(251,191,36,0.1)",padding:"1px 4px",borderRadius:3}}>public/portfolio-data.json</code><br/>
+            <span style={{color:"#a5b4fc"}}>5.</span> <code style={{color:"#fbbf24",background:"rgba(251,191,36,0.1)",padding:"1px 4px",borderRadius:3}}>npm run build</code> → deploy → production updated ✓
+          </div>
+          <div style={{display:"flex",gap:"0.55rem",flexWrap:"wrap",alignItems:"center"}}>
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+            <button style={{background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.35)",
+              color:"#10b981",borderRadius:6,padding:"0.35rem 0.9rem",cursor:"pointer",
+              fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem"}}
+              title="Download portfolio-data.json — put it in public/ then npm run build"
+              onClick={() => {
+                const blob = new Blob([JSON.stringify(draft, null, 2)], {type:"application/json"});
+                const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+                a.download = "portfolio-data.json"; a.click();
+              }}>⬇ Export for Prod</button>
+            <button className="btn btn-success btn-sm" onClick={() => { onSave(draft); onClose(); }}>✓ Save Changes</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2289,18 +2309,56 @@ export default function Portfolio() {
 
   useReveal();
 
+  // ── DEV / PROD toggle ──────────────────────────────────────
+  // In .env.local  →  VITE_DEV_MODE=true   (shows Edit button)
+  // In .env        →  VITE_DEV_MODE=false  (hides Edit button for prod)
+  const IS_DEV = (() => {
+    try { return import.meta.env.VITE_DEV_MODE === "true"; }
+    catch(e) { return false; }
+  })();
+
   const handleSave = useCallback((newData) => {
     setData(newData);
     // Persist to localStorage
-    try { localStorage.setItem("portfolio_data", JSON.stringify(newData)); } catch(e) {}
+    try {
+      const { orbitIcons, ...rest } = newData;
+      localStorage.setItem("portfolio_data", JSON.stringify(rest));
+      if (orbitIcons && orbitIcons.length)
+        localStorage.setItem("portfolio_icons", JSON.stringify(orbitIcons));
+    } catch(e) { console.warn("Save failed:", e.message); }
   }, []);
 
-  // Load from localStorage on mount
+  // ── DATA LOADING PRIORITY ────────────────────────────────
+  // 1. localStorage (your dev edits, survive refresh)
+  // 2. /portfolio-data.json in /public (written by npm run publish)
+  // 3. DEFAULT_DATA hardcoded above (fallback)
+  //
+  // WORKFLOW FOR PROD:
+  //   Edit in dev → "Save Changes" → Editor → "⬇ Export JSON"
+  //   → save file as  public/portfolio-data.json
+  //   → npm run build  → deploy  ✓
+  //
+  // OR use:  npm run publish  (auto-patches DEFAULT_DATA)
   useEffect(() => {
+    const merge = (parsed) => {
+      try {
+        const icons = localStorage.getItem("portfolio_icons");
+        if (icons) parsed.orbitIcons = JSON.parse(icons);
+      } catch(e) {}
+      setData(parsed);
+    };
+
+    // Step 1 — localStorage (highest priority, dev edits)
     try {
       const saved = localStorage.getItem("portfolio_data");
-      if (saved) setData(JSON.parse(saved));
+      if (saved) { merge(JSON.parse(saved)); return; }
     } catch(e) {}
+
+    // Step 2 — /portfolio-data.json (published from dev editor)
+    fetch("/portfolio-data.json")
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(json => merge(json))
+      .catch(() => {}); // falls back to DEFAULT_DATA already set
   }, []);
 
   const { meta, about, skills, experience, projects, certifications, education } = data;
@@ -2323,16 +2381,20 @@ export default function Portfolio() {
           ))}
         </ul>
         <div className="nav-right">
-          <button
-            className={`nav-btn ${editMode?"active":""}`}
-            onClick={() => { setEditMode(!editMode); if(!editMode) setShowEdit(false); }}
-          >
-            {editMode ? "✓ Editing" : "✎ Edit"}
-          </button>
-          {editMode && (
-            <button className="nav-btn active" onClick={() => setShowEdit(true)}>
-              ⊞ Open Editor
-            </button>
+          {IS_DEV && (
+            <>
+              <button
+                className={`nav-btn ${editMode?"active":""}`}
+                onClick={() => { setEditMode(!editMode); if(!editMode) setShowEdit(false); }}
+              >
+                {editMode ? "✓ Editing" : "✎ Edit"}
+              </button>
+              {editMode && (
+                <button className="nav-btn active" onClick={() => setShowEdit(true)}>
+                  ⊞ Open Editor
+                </button>
+              )}
+            </>
           )}
           <button className="hamburger" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
             <span/><span/><span/>
@@ -2350,7 +2412,7 @@ export default function Portfolio() {
       )}
 
       {/* Edit mode bar */}
-      {editMode && !showEdit && (
+      {IS_DEV && editMode && !showEdit && (
         <div className="edit-mode-bar">
           <span>✎ Edit Mode Active</span>
           <button className="btn btn-sm" style={{background:"rgba(99,102,241,0.3)",border:"1px solid rgba(99,102,241,0.5)",color:"#a5b4fc",borderRadius:6,padding:"0.3rem 0.8rem",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.68rem",cursor:"pointer"}} onClick={() => setShowEdit(true)}>
@@ -2360,7 +2422,7 @@ export default function Portfolio() {
       )}
 
       {/* Edit panel */}
-      {showEdit && (
+      {IS_DEV && showEdit && (
         <EditPanel data={data} onSave={handleSave} onClose={() => setShowEdit(false)} />
       )}
 
