@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+const BASE_URL = import.meta.env.BASE_URL || "/";
+const withBase = (path = "") => `${BASE_URL}${path.replace(/^\/+/, "")}`;
+
 /* ═══════════════════════════════════════════════════════════
    INITIAL CONTENT — edit via UI or update this object
 ═══════════════════════════════════════════════════════════ */
@@ -14,7 +17,7 @@ const DEFAULT_DATA = {
     location: "Pune, India",
     linkedin: "https://linkedin.com/in/swapnil-pharate",
     github: "https://github.com/swapnilpharate",
-    resume: "/Swapnil_Pharate_resume.pdf",
+    resume: withBase("Swapnil_Pharate_resume.pdf"),
     availability: "Open to Opportunities"
   },
   about: {
@@ -1806,7 +1809,7 @@ function EditPanel({ data, onSave, onClose }) {
         {/* Grid */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"0.6rem"}}>
           {nodes.map((n, i) => {
-            const imgSrc = n.dataUrl || ("/icons/" + n.file);
+            const imgSrc = n.dataUrl || withBase(`icons/${n.file}`);
             const ring = ringOf(i);
             return (
               <div key={n.file+i}
@@ -2409,7 +2412,7 @@ export default function Portfolio() {
     } catch(e) {}
 
     // Step 2 — /portfolio-data.json (published from dev editor)
-    fetch("/portfolio-data.json")
+    fetch(withBase("portfolio-data.json"))
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(json => merge(json))
       .catch(() => {}); // falls back to DEFAULT_DATA already set
@@ -2505,7 +2508,7 @@ export default function Portfolio() {
             <p className="hero-tagline">{meta.tagline}</p>
 
             <div className="hero-ctas">
-              <a href="/Swapnil_Pharate_resume.pdf" download="Swapnil_Pharate_Resume.pdf" className="btn btn-primary">
+              <a href={withBase("Swapnil_Pharate_resume.pdf")} download="Swapnil_Pharate_Resume.pdf" className="btn btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Resume
               </a>
